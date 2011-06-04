@@ -22,23 +22,56 @@
 			Administration::instance()->saveConfig();
 		}
 		
-		public function fetchNavigation() {
-			return array(
-				array(
-					'location' => __('Google Analytics'),
-					'name' => __('Overview'),
-					'link' => '/'
-				)
-			);
-		}
-		
 		public function getSubscribedDelegates() {
 			return array(
+				array(
+					'page' => '/backend/',
+					'delegate' => 'ExtensionsAddToNavigation',
+					'callback' => 'add_navigation'
+				),
+				array(
+					'page'		=> '/backend/',
+					'delegate'	=> 'InitaliseAdminPageHead',
+					'callback'	=> 'append_assets'
+				),
 				array(
 					'page' => '/system/preferences/',
 					'delegate' => 'AddCustomPreferenceFieldsets',
 					'callback' => '__addPreferences'
+				),
+				array(
+					'page' => '/system/authors/',
+					'delegate' => 'AddDefaultAuthorAreas',
+					'callback' => 'author_default_section'
 				)
+			);
+		}
+		
+	public function append_assets($context) {
+		$page = $context['parent']->Page;
+		$page->addStylesheetToHead(URL . '/extensions/google_analytics/assets/google_analytics.backend.css', 'screen', 993);
+		$page->addScriptToHead(URL . '/extensions/google_analytics/assets/google_analytics.backend.js', 994);
+	}
+	
+		public function add_navigation($context) {
+			$context['navigation'][] = array(
+				'name' => __('Analytics'),
+				'index' => '1',
+				'children' => array(
+					array(
+						'link' => '/extension/google_analytics/',
+						'name' => __('Analytics'),
+						'visible' => 'yes'
+					),
+				),
+			);
+		}
+		
+		public function author_default_section($context) {
+			$context['options'][] = array(
+				'/extension/google_analytics/', //value
+				($context['default_area'] == '/extension/google_analytics/'), //selected
+				__('Analytics') // label
 			);
 		}
 		
