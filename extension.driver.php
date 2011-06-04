@@ -147,11 +147,11 @@
 				Administration::instance()->saveConfig();
 		}
 		
-		public function getSessionToken($session_token) {
+		public function getSessionToken() {
 				return Symphony::Configuration()->get('session_token', 'google_analytics');
 		}
 		
-		public function getProfile($profile) {
+		public function getProfile() {
 				return Symphony::Configuration()->get('profile', 'google_analytics');
 		}
 		
