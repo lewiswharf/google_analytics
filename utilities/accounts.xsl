@@ -11,11 +11,15 @@
     indent="yes" />
     
   <xsl:template match="/atom:feed">
-    <xsl:value-of select="atom:title"/>
-    <fieldset>
-      <select name="google_analytics_profile" id="google-analytics-profile">
-        <xsl:apply-templates select="atom:entry"/>
-      </select>
+    <h2>Google Analytics: <xsl:value-of select="atom:title"/></h2>
+    <fieldset class="settings">
+      	<label>
+          Choose a profile
+          <select name="google_analytics_profile" id="google-analytics-profile">
+            <xsl:apply-templates select="atom:entry"/>
+          </select>
+        </label>
+        <input type="submit" name="action[save]" value="Load Google Analytics"/>
     </fieldset>
   </xsl:template>
   

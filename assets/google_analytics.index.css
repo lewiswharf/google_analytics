@@ -1,0 +1,13 @@
+#ga-getprofiles fieldset.settings {
+	padding-left:0;
+}
+
+#ga-getprofiles fieldset.settings select {
+	width:25%;
+}
+
+#ga-getprofiles fieldset.settings input {
+    float: left;
+    margin-right: 1em;
+    padding: 3.5px 6px 4px;
+}

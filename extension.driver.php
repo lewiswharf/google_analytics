@@ -1,5 +1,7 @@
 <?php
 	
+	require_once(TOOLKIT . '/class.xsltprocess.php');
+
 	class Extension_Google_Analytics extends Extension {
 		
 		private $requestError = null; 
@@ -137,6 +139,15 @@
 			return $session_token;
 		}
 		
+		
+		public function transformDataFeedWithXSLT($xsl, $xml) {
+
+			$Proc = new XsltProcess;
+			$data = $Proc->process($xml, $xsl);
+
+			return $data;
+		}
+
 		public function setSessionToken($session_token) {
 				Symphony::Configuration()->set('session_token', $session_token, 'google_analytics');
 				Administration::instance()->saveConfig();
