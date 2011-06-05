@@ -16,6 +16,11 @@
 		}	
 		
 		public function __viewIndex() {
+
+			$this->addStylesheetToHead(URL . '/extensions/google_analytics/assets/google_analytics.index.css', 'screen', 20002);
+			$this->addScriptToHead('https://www.google.com/jsapi', 1);
+			$this->addScriptToHead(URL . '/extensions/google_analytics/assets/google_analytics.index.js', 20004);
+
 			if($profile = $this->_driver->getProfile()) {
 				
 				$feed = self::GA_REPORT_DATA
@@ -30,7 +35,7 @@
 //				die($xml);
 				$xsl = file_get_contents(EXTENSIONS . '/google_analytics/utilities/report.xsl');
 				$output = new XMLElement("div", $this->_driver->transformDataFeedWithXSLT($xsl, $xml));
-				$output->setAttribute("id", "ga-getprofiles");			
+				$output->setAttribute("id", "ga-index");			
 				
 				$this->Form->appendChild($output);
 			} else {
@@ -41,7 +46,6 @@
 		public function __viewGetprofile() {
 			
 			$this->addStylesheetToHead(URL . '/extensions/google_analytics/assets/google_analytics.index.css', 'screen', 20002);
-			$this->addScriptToHead(URL . '/extensions/google_analytics/assets/google_analytics.index.js', 20003);
 
 			if(!$profile = $this->_driver->getProfile()) {
 				

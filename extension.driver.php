@@ -52,7 +52,6 @@
 	public function append_assets($context) {
 		$page = $context['parent']->Page;
 		$page->addStylesheetToHead(URL . '/extensions/google_analytics/assets/google_analytics.backend.css', 'screen', 993);
-		$page->addScriptToHead(URL . '/extensions/google_analytics/assets/google_analytics.backend.js', 994);
 	}
 	
 		public function add_navigation($context) {
