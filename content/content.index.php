@@ -90,6 +90,11 @@
 			$this->Form->appendChild($result);
 		}
 		
+		public function __viewUnlink() {
+			$this->_driver->deleteSessionToken();
+			redirect('https://www.google.com/accounts');
+		}
+		
 		public function __viewGetprofiles() {
 			
 			$this->addStylesheetToHead(URL . '/extensions/google_analytics/assets/google_analytics.index.css', 'screen', 20002);

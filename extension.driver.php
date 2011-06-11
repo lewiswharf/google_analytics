@@ -21,7 +21,7 @@
 		
 		public function install() {
 			return Symphony::Database()->query("
-				CREATE TABLE `tbl_fields_html_panel` (
+				CREATE TABLE `tbl_fields_google_analytics` (
 				`id` int(11) unsigned NOT NULL auto_increment,
 				`field_id` int(11) unsigned NOT NULL,
 				`url_expression` varchar(255) default NULL,
@@ -34,7 +34,7 @@
 		public function uninstall() {
 			Symphony::Configuration()->remove('google_analytics');
 			Administration::instance()->saveConfig();
-			Symphony::Database()->query("DROP TABLE `tbl_fields_html_panel`");
+			Symphony::Database()->query("DROP TABLE `tbl_fields_google_analytics`");
 		}
 		
 		public function getSubscribedDelegates() {
@@ -101,7 +101,7 @@
 				$fieldset->appendChild($anchor);
 				
 			} elseif(Symphony::Configuration()->get('session_token', 'google_analytics') !== null) {
-				$anchor = Widget::Anchor('Unlink Google Analytics', URL . '/symphony/extension/google_analytics/unlink/');
+				$anchor = Widget::Anchor('Unlink Google Analytics', URL . '/symphony/extension/google_analytics/index/unlink/');
 					$fieldset->appendChild($anchor);
 			}
 			
@@ -130,7 +130,6 @@
 		public function deleteSessionToken() {
 			Symphony::Configuration()->remove('google_analytics');
 			Administration::instance()->saveConfig();
-			redirect('https://www.google.com/accounts');
 		}
 
 	}

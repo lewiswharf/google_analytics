@@ -4,7 +4,7 @@
 		
 		public function __construct(&$parent){
 			parent::__construct($parent);
-			$this->_name = __('HTML Panel');
+			$this->_name = __('Google Analytics');
 			$this->_driver = $this->_engine->ExtensionManager->create('html_panel');
 		}
 
