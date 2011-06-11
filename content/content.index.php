@@ -50,7 +50,7 @@
 						'end-date' =>DateTimeObj::format('now', 'Y-m-d'),
 						'dimensions' => 'ga:pageTitle',
 						'metrics' => 'ga:pageviews',
-						'sort' => 'ga:pageviews'
+						'sort' => '-ga:pageviews'
 					));
 					
 				$xml = $top_pages_report->getReport();
@@ -68,7 +68,7 @@
 						'end-date' =>DateTimeObj::format('now', 'Y-m-d'),
 						'dimensions' => 'ga:keyword',
 						'metrics' => 'ga:visitors',
-						'sort' => 'ga:visitors'
+						'sort' => '-ga:visitors'
 					));
 					
 				$xml = $top_pages_report->getReport();
