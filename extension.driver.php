@@ -66,6 +66,7 @@
 		$page = $context['parent']->Page;
 		$page->addStylesheetToHead(URL . '/extensions/google_analytics/assets/google_analytics.backend.css', 'screen', 993);
 		$page->addScriptToHead(URL . '/extensions/google_analytics/assets/google_analytics.backend.js', 20004);
+		$page->addScriptToHead('https://www.google.com/jsapi', 1);
 	}
 	
 		public function add_navigation($context) {

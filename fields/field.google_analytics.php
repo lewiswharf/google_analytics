@@ -1,11 +1,14 @@
 <?php
 	
+	require_once(EXTENSIONS . '/google_analytics/lib/class.googleaccount.php');
+	require_once(EXTENSIONS . '/google_analytics/lib/class.googlereport.php');
+
 	Class fieldgoogle_analytics extends Field{
 		
 		public function __construct(&$parent){
 			parent::__construct($parent);
 			$this->_name = __('Google Analytics');
-			$this->_driver = $this->_engine->ExtensionManager->create('html_panel');
+			$this->_driver = $this->_engine->ExtensionManager->create('google_analytics');
 		}
 
 		function displaySettingsPanel(&$wrapper, $errors=NULL){
@@ -19,10 +22,7 @@
 		
 		public function processRawFieldData($data, &$status, $simulate=false, $entry_id=null) {
 			$status = self::__OK__;
-			return array(
-				'handle' => Lang::createHandle($data),
-				'value' => $data
-			);
+			return array();
 		}
 		
 		public function commit() {
@@ -38,7 +38,7 @@
 				'url_expression'	=> $this->get('url_expression')
 			);
 			
-			Symphony::Database()->query("
+			$this->Database->query("
 				DELETE FROM
 					`tbl_fields_{$handle}`
 				WHERE
@@ -46,7 +46,7 @@
 				LIMIT 1
 			");
 			
-			return Symphony::Database()->insert($fields, "tbl_fields_{$handle}");
+			return $this->Database->insert($fields, "tbl_fields_{$handle}");
 		}
 		
 		function displayPublishPanel(&$wrapper, $data=NULL, $flagWithError=NULL, $fieldnamePrefix=NULL, $fieldnamePostfix=NULL){
@@ -63,8 +63,25 @@
 			
 			// parse dynamic portions of the HTML Panel URL
 			$url = $this->parseExpression($entry, $this->get('url_expression'));
-			if (!preg_match('/^http/', $url)) $url = URL . $url;
-
+			
+			$visits_graph_report = new GoogleReport(
+				$this->_driver->getSessionToken(),
+				array(
+					'ids' => $this->_driver->getProfile(),
+					'start-date' => DateTimeObj::format('-1 month', 'Y-m-d'),
+					'end-date' =>DateTimeObj::format('now', 'Y-m-d'),
+					'dimensions' => 'ga:date',
+					'metrics' => 'ga:pageviews',
+					'sort' => 'ga:date',
+					'filters' => 'ga:pagePath==' . $url
+				));
+				
+			$xml = $visits_graph_report->getReport();
+//var_dump($xml);
+			$xsl = file_get_contents(EXTENSIONS . '/google_analytics/utilities/report.field.xsl');
+			$output = new XMLElement("div", $this->transformDataFeedWithXSLT($xsl, $xml));
+			
+			$wrapper->appendChild($output);
 		}
 		
 		//  from HTML Panel Field
@@ -138,6 +155,14 @@
 			$dom->loadXML($xml->generate(true));
 
 			return new DOMXPath($dom);
+		}
+
+		public function transformDataFeedWithXSLT($xsl, $xml) {
+
+			$Proc = new XsltProcess;
+			$data = $Proc->process($xml, $xsl);
+
+			return $data;
 		}
 						
 	}
