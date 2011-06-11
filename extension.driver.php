@@ -19,9 +19,22 @@
 			);
 		}
 		
+		public function install() {
+			return Symphony::Database()->query("
+				CREATE TABLE `tbl_fields_html_panel` (
+				`id` int(11) unsigned NOT NULL auto_increment,
+				`field_id` int(11) unsigned NOT NULL,
+				`url_expression` varchar(255) default NULL,
+				PRIMARY KEY (`id`),
+				UNIQUE KEY `field_id` (`field_id`)
+				) TYPE=MyISAM
+			");
+		}
+		
 		public function uninstall() {
 			Symphony::Configuration()->remove('google_analytics');
 			Administration::instance()->saveConfig();
+			Symphony::Database()->query("DROP TABLE `tbl_fields_html_panel`");
 		}
 		
 		public function getSubscribedDelegates() {
@@ -82,7 +95,7 @@
 			$fieldset->appendChild(new XMLElement('legend', 'Google Analytics'));
 			
 			if(Symphony::Configuration()->get('session_token', 'google_analytics') === null) {
-				$anchor = Widget::Anchor('Link Google Analytics', 'https://www.google.com/accounts/AuthSubRequest?next=' . URL . '/symphony/extension/google_analytics/index/link/
+				$anchor = Widget::Anchor('Link Google Analytics', 'https://www.google.com/accounts/AuthSubRequest?next=' . URL . '/symphony/extension/google_analytics/index/getprofiles/
 																													&amp;scope=https://www.google.com/analytics/feeds/
 																													&amp;secure=0&amp;session=1');
 				$fieldset->appendChild($anchor);
@@ -96,57 +109,6 @@
 			$context['wrapper']->appendChild($fieldset);			
 		}
 		
-		public function curlRequest($url, $token) {
-			
-			$headers = array();
-			$headers[] = sprintf("Authorization: AuthSub token=\"%s\"/n", $token);
-			
-			$ch = curl_init();
-						
-			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); //CURL doesn't like google's cert
-			curl_setopt($ch, CURLOPT_HTTPHEADER,$headers);
-			
-			$response = curl_exec($ch);
-			
-			$this->requestError = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-			
-			curl_close($ch);
-			
-			return $response;
-		}
-		
-		public function getRequestError() {
-			switch($this->requestError) {
-				case 200:
-					return false;
-				default:
-					return true;
-			}
-		}
-		
-		function convertSingleUseToken($url, $token) {
-			$response = $this->curlRequest($url, $token);
-
-			if (preg_match("/Token=(.*)/", $response, $matches)) {
-				$session_token = $matches[1];
-			} else {
-				return false;
-			}
-			
-			return $session_token;
-		}
-		
-		
-		public function transformDataFeedWithXSLT($xsl, $xml) {
-
-			$Proc = new XsltProcess;
-			$data = $Proc->process($xml, $xsl);
-
-			return $data;
-		}
-
 		public function setSessionToken($session_token) {
 				Symphony::Configuration()->set('session_token', $session_token, 'google_analytics');
 				Administration::instance()->saveConfig();

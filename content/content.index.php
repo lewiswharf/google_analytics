@@ -1,11 +1,10 @@
 <?php
 
 	require_once(TOOLKIT . '/class.administrationpage.php');
+	require_once(EXTENSIONS . '/google_analytics/lib/class.googleaccount.php');
+	require_once(EXTENSIONS . '/google_analytics/lib/class.googlereport.php');
 		
 	Class contentExtensionGoogle_AnalyticsIndex extends AdministrationPage {
-		
-		const GA_ACCOUNT_DATA = 'https://www.google.com/analytics/feeds/accounts/default';
-		const GA_REPORT_DATA = 'https://www.google.com/analytics/feeds/data';
 				
 		protected $_driver = null;
 
@@ -23,77 +22,116 @@
 
 			if($profile = $this->_driver->getProfile()) {
 				
-				$feed = self::GA_REPORT_DATA
-				  . '?ids=' . $profile 
-					. '&start-date=' . DateTimeObj::format('-1 month', 'Y-m-d') 
-					. '&end-date=' . DateTimeObj::format('now', 'Y-m-d')
-    			. '&dimensions=ga:date' 
-    			. '&metrics=ga:visits,ga:pageviews' 
-    			. '&sort=ga:date';
+				$result = new XMLElement("div");
+				
+				$visits_graph_report = new GoogleReport(
+					$this->_driver->getSessionToken(),
+					array(
+						'ids' => $profile,
+						'start-date' => DateTimeObj::format('-1 month', 'Y-m-d'),
+						'end-date' =>DateTimeObj::format('now', 'Y-m-d'),
+						'dimensions' => 'ga:date',
+						'metrics' => 'ga:visits,ga:pageviews',
+						'sort' => 'ga:date'
+					));
 					
-				$xml = $this->_driver->curlRequest($feed, $this->_driver->getSessionToken());
-//				die($xml);
-				$xsl = file_get_contents(EXTENSIONS . '/google_analytics/utilities/report.chart.xsl');
-				$output = new XMLElement("div", $this->_driver->transformDataFeedWithXSLT($xsl, $xml));
-				$output->setAttribute("id", "ga-index");			
-				
-				$feed2 = self::GA_REPORT_DATA
-				  . '?ids=' . $profile 
-					. '&start-date=' . DateTimeObj::format('-1 month', 'Y-m-d') 
-					. '&end-date=' . DateTimeObj::format('now', 'Y-m-d')
-    			. '&dimensions=ga:pageTitle' 
-    			. '&metrics=ga:pageviews' 
-    			. '&sort=-ga:pageviews';
-					
-				$xml2 = $this->_driver->curlRequest($feed2, $this->_driver->getSessionToken());
-//				print_r($xml2);
-				$xsl2 = file_get_contents(EXTENSIONS . '/google_analytics/utilities/report.pages.xsl');
-				$output2 = new XMLElement("div", $this->_driver->transformDataFeedWithXSLT($xsl2, $xml2));
-				
-				$output->appendChild($output2);
-				
-				$feed3 = self::GA_REPORT_DATA
-				  . '?ids=' . $profile 
-					. '&start-date=' . DateTimeObj::format('-1 month', 'Y-m-d') 
-					. '&end-date=' . DateTimeObj::format('now', 'Y-m-d')
-    			. '&dimensions=ga:keyword' 
-    			. '&metrics=ga:visitors' 
-    			. '&sort=-ga:visitors';
-					
-				$xml3 = $this->_driver->curlRequest($feed3, $this->_driver->getSessionToken());
-//				die($xml3);
-				$xsl3 = file_get_contents(EXTENSIONS . '/google_analytics/utilities/report.keywords.xsl');
-				$output3 = new XMLElement("div", $this->_driver->transformDataFeedWithXSLT($xsl3, $xml3));
-				
-				$output->appendChild($output3);
+				$xml = $visits_graph_report->getReport();
 
-				$this->Form->appendChild($output);
+				$xsl = file_get_contents(EXTENSIONS . '/google_analytics/utilities/report.chart.xsl');
+				$output = new XMLElement("div", $this->transformDataFeedWithXSLT($xsl, $xml));
+				
+				$result->appendChild($output);
+
+				$top_pages_report = new GoogleReport(
+					$this->_driver->getSessionToken(),
+					array(
+						'ids' => $profile,
+						'start-date' => DateTimeObj::format('-1 month', 'Y-m-d'),
+						'end-date' =>DateTimeObj::format('now', 'Y-m-d'),
+						'dimensions' => 'ga:pageTitle',
+						'metrics' => 'ga:pageviews',
+						'sort' => 'ga:pageviews'
+					));
+					
+				$xml = $top_pages_report->getReport();
+
+				$xsl = file_get_contents(EXTENSIONS . '/google_analytics/utilities/report.pages.xsl');
+				$output = new XMLElement("div", $this->transformDataFeedWithXSLT($xsl, $xml));
+				
+				$result->appendChild($output);
+				
+				$top_pages_report = new GoogleReport(
+					$this->_driver->getSessionToken(),
+					array(
+						'ids' => $profile,
+						'start-date' => DateTimeObj::format('-1 month', 'Y-m-d'),
+						'end-date' =>DateTimeObj::format('now', 'Y-m-d'),
+						'dimensions' => 'ga:keyword',
+						'metrics' => 'ga:visitors',
+						'sort' => 'ga:visitors'
+					));
+					
+				$xml = $top_pages_report->getReport();
+
+				$xsl = file_get_contents(EXTENSIONS . '/google_analytics/utilities/report.keywords.xsl');
+				$output = new XMLElement("div", $this->transformDataFeedWithXSLT($xsl, $xml));
+				
+				$result->appendChild($output);
+
+				$this->Form->appendChild($result);
 			} else {
-				redirect(URL . 'symphony/extension/google_analytics/index/getprofile/');
+				redirect(URL . '/symphony/extension/google_analytics/index/noprofile/');
 			}
 		}
 		
-		public function __viewGetprofile() {
+		public function __viewNoprofile() {
+			$result = new XMLElement("p");
+			$result->appendChild(Widget::Anchor('You must link your Google Analytics account in preferences.', URL . '/symphony/system/preferences/'));
+			$this->Form->appendChild($result);
+		}
+		
+		public function __viewGetprofiles() {
 			
 			$this->addStylesheetToHead(URL . '/extensions/google_analytics/assets/google_analytics.index.css', 'screen', 20002);
 
-			if(!$profile = $this->_driver->getProfile()) {
+			if(isset($_GET['token'])) {
 				
-				$xml = $this->_driver->curlRequest(self::GA_ACCOUNT_DATA, $this->_driver->getSessionToken());
+				$auth = new GoogleAccount($_GET['token'], null);
+
+				$this->_driver->setSessionToken($auth->authSubSessionToken());
+				
+				$profiles = new GoogleAccount(
+					$this->_driver->getSessionToken(),
+					array(
+						'start-index' => 1,
+						'max-results' => 500,
+						'v' => 2
+					));
+					
+				$xml = $profiles->getAccounts();
+				
 				$xsl = file_get_contents(EXTENSIONS . '/google_analytics/utilities/accounts.xsl');
 				
-				$output = new XMLElement("div", $this->_driver->transformDataFeedWithXSLT($xsl, $xml));
-				$output->setAttribute("id", "ga-getprofiles");			
+				$result = new XMLElement("div", $this->transformDataFeedWithXSLT($xsl, $xml));
+				$result->setAttribute("id", "ga-getprofiles");			
 				
-				$this->Form->appendChild($output);
+				$this->Form->appendChild($result);
 			} else {
-				redirect(URL . 'symphony/extension/google_analytics/');
+				redirect(URL . '/symphony/extension/google_analytics/iondex/noprofile/');
 			}
 		}	
 		
-		public function __actionGetprofile() {
+		public function __actionGetprofiles() {
 			$this->_driver->setProfile($_POST['google_analytics_profile']);
-			redirect(URL . 'symphony/extension/google_analytics/');
+			redirect(URL . '/symphony/extension/google_analytics/');
+		}
+
+		public function transformDataFeedWithXSLT($xsl, $xml) {
+
+			$Proc = new XsltProcess;
+			$data = $Proc->process($xml, $xsl);
+
+			return $data;
 		}
 	}
 
